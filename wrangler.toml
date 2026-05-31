@@ -1,0 +1,55 @@
+# ============================================================
+# wrangler.toml — MarkdownOffice Daily Mailer
+# ============================================================
+
+name             = "markdownoffice-mailer"
+main             = "src/index.ts"
+compatibility_date  = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev      = true    # set false once you have a custom route
+
+# ── Cron Trigger ────────────────────────────────────────────
+# Runs every day at 09:00 UTC.
+# Test alternate times: "*/5 * * * *" (every 5 min) during dev.
+[triggers]
+crons = ["0 9 * * *"]
+
+# ── D1 Database ─────────────────────────────────────────────
+# Create:  wrangler d1 create markdownoffice-mailer-db
+# Migrate: wrangler d1 execute markdownoffice-mailer-db --file=schema.sql --remote
+[[d1_databases]]
+binding       = "DB"
+database_name = "markdownoffice-mailer-db"
+database_id   = "REPLACE_WITH_YOUR_D1_DATABASE_ID"   # ← paste from `wrangler d1 create` output
+
+# ── KV Namespace ─────────────────────────────────────────────
+# Create: wrangler kv namespace create EMAIL_KV
+[[kv_namespaces]]
+binding = "EMAIL_KV"
+id      = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"        # ← paste from `wrangler kv namespace create` output
+
+# ── Non-secret environment variables ─────────────────────────
+# Secrets are NEVER stored here. Set them with:
+#   wrangler secret put BREVO_API_KEY
+#   wrangler secret put TRIGGER_SECRET
+[vars]
+# Fallback recipient list — used only when D1 has no active rows.
+# For production, manage recipients through D1 instead.
+RECIPIENTS_JSON = '["placeholder@example.com"]'
+
+# ── Local development overrides (.dev.vars takes precedence) ─
+# See .dev.vars.example for the secrets file format.
+
+# ── Production environment (deploy with: wrangler deploy --env production) ─
+[env.production]
+workers_dev = false
+
+[env.production.vars]
+RECIPIENTS_JSON = '["user1@gmail.com","user2@gmail.com"]'
+
+# Production D1 + KV can use the same IDs as above,
+# or separate ones for isolation:
+# [[env.production.d1_databases]]
+# binding       = "DB"
+# database_name = "markdownoffice-mailer-db-prod"
+# database_id   = "PROD_D1_ID"
